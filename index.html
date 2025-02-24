@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบบันทึกการสั่งซื้ออุปกรณ์การเรียน</title>
+    <style>
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            padding: 10px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-section, .result-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #fafafa;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .form-section h2, .result-section h2 {
+            color: #2980b9;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            font-size: 1.4em;
+        }
+
+        .form-section label {
+            font-weight: bold;
+            margin-right: 10px;
+            color: #34495e;
+        }
+
+        .form-section select, .form-section input {
+            padding: 6px;
+            margin: 5px 10px 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+            width: calc(100% - 20px);
+            max-width: 150px;
+            transition: border-color 0.3s;
+        }
+
+        .form-section select:focus, .form-section input:focus {
+            border-color: #3498db;
+            outline: none;
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+
+        #notebook-inputs {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+
+        .notebook-column {
+            flex: 1;
+            min-width: 100%;
+            margin-right: 0;
+        }
+
+        @media (min-width: 768px) {
+            .notebook-column {
+                min-width: calc(50% - 10px);
+                margin-right: 20px;
+            }
+            .notebook-column:last-child {
+                margin-right: 0;
+            }
+        }
+
+        .notebook-column table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+
+        .notebook-column th, .notebook-column td {
+            border: 1px solid #ddd;
+            padding: 6px;
+            text-align: left;
+        }
+
+        .notebook-column th {
+            background: #3498db;
+            color: white;
+        }
+
+        table#recordsTable, #summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            font-size: 0.9em;
+        }
+
+        #recordsTable th, #recordsTable td, #summary-table th, #summary-table td {
+            border: 1px solid #ecf0f1;
+            padding: 8px;
+            text-align: center;
+        }
+
+        #recordsTable th, #summary-table th {
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        #recordsTable tr:nth-child(even), #summary-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        #recordsTable tr:hover, #summary-table tr:hover {
+            background-color: #e9ecef;
+            transition: background-color 0.3s;
+        }
+
+        button {
+            padding: 8px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .add-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .add-btn:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .edit-btn {
+            background: #f1c40f;
+            color: white;
+        }
+
+        .edit-btn:hover {
+            background: #e1b307;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        .import-btn {
+            background: #9b59b6;
+            color: white;
+        }
+
+        .import-btn:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
+        }
+
+        #summary {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.8;
+            color: #2c3e50;
+        }
+
+        .notification, .alert-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.5s;
+            color: white;
+            font-size: 1.1em;
+            background: #fff;
+            text-align: center;
+        }
+
+        .notification.show, .alert-box.show {
+            opacity: 1;
+        }
+
+        .notification {
+            background: #2ecc71;
+        }
+
+        .alert-box.error {
+            background: #e74c3c;
+        }
+
+        .alert-box.warning, .alert-box.password {
+            background: #f1c40f;
+            color: #333;
+        }
+
+        .alert-box input {
+            display: block;
+            width: 80%;
+            margin: 10px auto;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .alert-box button {
+            margin: 10px 5px 0;
+            padding: 8px 15px;
+            background: #2980b9;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .alert-box button:hover {
+            background: #3498db;
+        }
+
+        .alert-box .show-password {
+            background: #7f8c8d;
+        }
+
+        .alert-box .show-password:hover {
+            background: #95a5a6;
+        }
+
+        #importFile {
+            display: none;
+        }
+
+        .filter-section {
+            margin-bottom: 10px;
+        }
+
+        .filter-section label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+
+        .filter-section select {
+            padding: 6px;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 767px) {
+            .form-section select, .form-section input {
+                width: 100%;
+                max-width: none;
+            }
+            h1 {
+                font-size: 1.5em;
+            }
+            .form-section h2, .result-section h2 {
+                font-size: 1.2em;
+            }
+            button {
+                width: 100%;
+            }
+        }
+
+        .form-row {
+            margin-bottom: 10px;
+        }
+
+        .developer-info {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .developer-info a {
+            color: #2980b9;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .developer-info a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>ระบบบันทึกการสั่งซื้ออุปกรณ์การเรียน</h1>
+        
+        <div class="form-section">
+            <h2>กรอกข้อมูล</h2>
+            <div class="form-row">
+                <label>ภาคเรียน: </label>
+                <select id="term">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                </select>
+                
+                <label>ปีการศึกษา: </label>
+                <input type="number" id="year" min="2566" max="2600" value="2567" placeholder="2567">
+            </div>
+            <div class="form-row">
+                <label>ชั้นเรียน: </label>
+                <select id="grade">
+                    <option value="อ.2">อ.2</option>
+                    <option value="อ.3">อ.3</option>
+                    <option value="ป.1">ป.1</option>
+                    <option value="ป.2">ป.2</option>
+                    <option value="ป.3">ป.3</option>
+                    <option value="ป.4">ป.4</option>
+                    <option value="ป.5">ป.5</option>
+                    <option value="ป.6">ป.6</option>
+                    <option value="ม.1">ม.1</option>
+                    <option value="ม.2">ม.2</option>
+                    <option value="ม.3">ม.3</option>
+                    <option value="ม.4">ม.4</option>
+                    <option value="ม.5">ม.5</option>
+                    <option value="ม.6">ม.6</option>
+                </select>
+                
+                <label>ห้อง: </label>
+                <select id="room">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                </select>
+                
+                <label>จำนวนนักเรียน: </label>
+                <input type="number" id="students" min="1" placeholder="30">
+            </div>
+
+            <h3>จำนวนอุปกรณ์การเรียน (ต่อคน)</h3>
+            <div id="notebook-inputs">
+                <div class="notebook-column">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ลำดับ</th>
+                                <th>รายการ</th>
+                                <th>ราคา</th>
+                                <th>หน่วย</th>
+                                <th>จำนวน</th>
+                                <th>รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>สมุด 40 แผ่น ธรรมดา</td><td>12</td><td>เล่ม</td><td><input type="number" id="item1" min="0" onchange="calculateTotal()"></td><td id="total1">0</td></tr>
+                            <tr><td>2</td><td>สมุด 40 กราฟ</td><td>12</td><td>เล่ม</td><td><input type="number" id="item2" min="0" onchange="calculateTotal()"></td><td id="total2">0</td></tr>
+                            <tr><td>3</td><td>สมุด 40 แผ่น 5 เส้น</td><td>12</td><td>เล่ม</td><td><input type="number" id="item3" min="0" onchange="calculateTotal()"></td><td id="total3">0</td></tr>
+                            <tr><td>4</td><td>สมุด 40 แผ่น ครึ่งบรรทัด</td><td>12</td><td>เล่ม</td><td><input type="number" id="item4" min="0" onchange="calculateTotal()"></td><td id="total4">0</td></tr>
+                            <tr><td>5</td><td>สมุด 80 แผ่น ธรรมดา</td><td>24</td><td>เล่ม</td><td><input type="number" id="item5" min="0" onchange="calculateTotal()"></td><td id="total5">0</td></tr>
+                            <tr><td>6</td><td>สมุด 80 กราฟ</td><td>24</td><td>เล่ม</td><td><input type="number" id="item6" min="0" onchange="calculateTotal()"></td><td id="total6">0</td></tr>
+                            <tr><td>7</td><td>สมุด 80 แผ่น 5 เส้น</td><td>24</td><td>เล่ม</td><td><input type="number" id="item7" min="0" onchange="calculateTotal()"></td><td id="total7">0</td></tr>
+                            <tr><td>8</td><td>สมุด 80 แผ่น ครึ่งบรรทัด</td><td>24</td><td>เล่ม</td><td><input type="number" id="item8" min="0" onchange="calculateTotal()"></td><td id="total8">0</td></tr>
+                            <tr><td>9</td><td>ดินสอ เอชบี</td><td>5</td><td>แท่ง</td><td><input type="number" id="item9" min="0" onchange="calculateTotal()"></td><td id="total9">0</td></tr>
+                            <tr><td>10</td><td>ดินสอ 2 บี</td><td>6</td><td>แท่ง</td><td><input type="number" id="item10" min="0" onchange="calculateTotal()"></td><td id="total10">0</td></tr>
+                            <tr><td>11</td><td>ปากกาลูกลื่น สีน้ำเงิน</td><td>7</td><td>ด้าม</td><td><input type="number" id="item11" min="0" onchange="calculateTotal()"></td><td id="total11">0</td></tr>
+                            <tr><td>12</td><td>ปากกาลูกลื่น สีแดง</td><td>7</td><td>ด้าม</td><td><input type="number" id="item12" min="0" onchange="calculateTotal()"></td><td id="total12">0</td></tr>
+                            <tr><td>13</td><td>ปากกาลูกลื่น สีดำ</td><td>7</td><td>ด้าม</td><td><input type="number" id="item13" min="0" onchange="calculateTotal()"></td><td id="total13">0</td></tr>
+                            <tr><td>14</td><td>ปากกาลูกลื่น สีน้ำเงิน</td><td>8</td><td>ด้าม</td><td><input type="number" id="item14" min="0" onchange="calculateTotal()"></td><td id="total14">0</td></tr>
+                            <tr><td>15</td><td>ปากกาลูกลื่น สีแดง</td><td>8</td><td>ด้าม</td><td><input type="number" id="item15" min="0" onchange="calculateTotal()"></td><td id="total15">0</td></tr>
+                            <tr><td>16</td><td>ปากกาลูกลื่น สีดำ</td><td>8</td><td>ด้าม</td><td><input type="number" id="item16" min="0" onchange="calculateTotal()"></td><td id="total16">0</td></tr>
+                            <tr><td>17</td><td>ยางลบ</td><td>6</td><td>ก้อน</td><td><input type="number" id="item17" min="0" onchange="calculateTotal()"></td><td id="total17">0</td></tr>
+                            <tr><td>18</td><td>ยางลบ Staedler</td><td>8</td><td>ก้อน</td><td><input type="number" id="item18" min="0" onchange="calculateTotal()"></td><td id="total18">0</td></tr>
+                            <tr><td>19</td><td>น้ำยาลบคำผิด</td><td>20</td><td>ด้าม</td><td><input type="number" id="item19" min="0" onchange="calculateTotal()"></td><td id="total19">0</td></tr>
+                            <tr><td>20</td><td>ไม้บรรทัด พลาสติก 12 นิ้ว</td><td>5</td><td>อัน</td><td><input type="number" id="item20" min="0" onchange="calculateTotal()"></td><td id="total20">0</td></tr>
+                            <tr><td>21</td><td>ไม้บรรทัด อลูมิเนียม 12 นิ้ว</td><td>40</td><td>อัน</td><td><input type="number" id="item21" min="0" onchange="calculateTotal()"></td><td id="total21">0</td></tr>
+                            <tr><td>22</td><td>ชุดเรขาคณิต</td><td>50</td><td>ชุด</td><td><input type="number" id="item22" min="0" onchange="calculateTotal()"></td><td id="total22">0</td></tr>
+                            <tr><td>23</td><td>ไม้โปรแทรกเตอร์</td><td>5</td><td>อัน</td><td><input type="number" id="item23" min="0" onchange="calculateTotal()"></td><td id="total23">0</td></tr>
+                            <tr><td>24</td><td>ดินน้ำมันไร้สารพิษ</td><td>40</td><td>แพ็ค</td><td><input type="number" id="item24" min="0" onchange="calculateTotal()"></td><td id="total24">0</td></tr>
+                            <tr><td>25</td><td>ดินน้ำมัน 100 กรัม</td><td>8</td><td>ก้อน</td><td><input type="number" id="item25" min="0" onchange="calculateTotal()"></td><td id="total25">0</td></tr>
+                            <tr><td>26</td><td>ดินน้ำมัน 150 กรัม</td><td>20</td><td>ก้อน</td><td><input type="number" id="item26" min="0" onchange="calculateTotal()"></td><td id="total26">0</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="notebook-column">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ลำดับ</th>
+                                <th>รายการ</th>
+                                <th>ราคา</th>
+                                <th>หน่วย</th>
+                                <th>จำนวน</th>
+                                <th>รวม</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>27</td><td>ดินน้ำมัน 500 กรัม</td><td>60</td><td>ก้อน</td><td><input type="number" id="item27" min="0" onchange="calculateTotal()"></td><td id="total27">0</td></tr>
+                            <tr><td>28</td><td>สีไม้ ยาว 12 สี MTA</td><td>80</td><td>กล่อง</td><td><input type="number" id="item28" min="0" onchange="calculateTotal()"></td><td id="total28">0</td></tr>
+                            <tr><td>29</td><td>สีไม้ ยาว 12 สี (2 หัว) MTA</td><td>50</td><td>กล่อง</td><td><input type="number" id="item29" min="0" onchange="calculateTotal()"></td><td id="total29">0</td></tr>
+                            <tr><td>30</td><td>สีไม้ สั้น 12 สี MTA</td><td>50</td><td>กล่อง</td><td><input type="number" id="item30" min="0" onchange="calculateTotal()"></td><td id="total30">0</td></tr>
+                            <tr><td>31</td><td>สีเทียน จัมโบ้ 12 สี MTA</td><td>40</td><td>กล่อง</td><td><input type="number" id="item31" min="0" onchange="calculateTotal()"></td><td id="total31">0</td></tr>
+                            <tr><td>32</td><td>สีโปสเตอร์ ชุดจิตรกรน้อย MTA</td><td>120</td><td>กล่อง</td><td><input type="number" id="item32" min="0" onchange="calculateTotal()"></td><td id="total32">0</td></tr>
+                            <tr><td>33</td><td>สีน้ำ 12 สี MTA</td><td>60</td><td>กล่อง</td><td><input type="number" id="item33" min="0" onchange="calculateTotal()"></td><td id="total33">0</td></tr>
+                            <tr><td>34</td><td>สีไม้ คลอลีน 12 สี</td><td>90</td><td>กล่อง</td><td><input type="number" id="item34" min="0" onchange="calculateTotal()"></td><td id="total34">0</td></tr>
+                            <tr><td>35</td><td>สีไม้ คลอลีน 24 สี</td><td>180</td><td>กล่อง</td><td><input type="number" id="item35" min="0" onchange="calculateTotal()"></td><td id="total35">0</td></tr>
+                            <tr><td>36</td><td>สีไม้ คลอลีน 36 สี</td><td>270</td><td>กล่อง</td><td><input type="number" id="item36" min="0" onchange="calculateTotal()"></td><td id="total36">0</td></tr>
+                            <tr><td>37</td><td>สีไม้ คลอลีน 48 สี</td><td>360</td><td>กล่อง</td><td><input type="number" id="item37" min="0" onchange="calculateTotal()"></td><td id="total37">0</td></tr>
+                            <tr><td>38</td><td>จานสี กลม</td><td><select id="price38" onchange="calculateTotal()"><option value="10">เล็ก 10</option><option value="20">ใหญ่ 20</option></select></td><td>อัน</td><td><input type="number" id="item38" min="0" onchange="calculateTotal()"></td><td id="total38">0</td></tr>
+                            <tr><td>39</td><td>แฟ้มกระดุม A4/F4</td><td>20</td><td>แฟ้ม</td><td><input type="number" id="item39" min="0" onchange="calculateTotal()"></td><td id="total39">0</td></tr>
+                            <tr><td>40</td><td>แฟ้มพลาสติก+ไส้แฟ้ม</td><td>50</td><td>แฟ้ม</td><td><input type="number" id="item40" min="0" onchange="calculateTotal()"></td><td id="total40">0</td></tr>
+                            <tr><td>41</td><td>แฟ้มซองพลาสติก A4</td><td>8</td><td>แฟ้ม</td><td><input type="number" id="item41" min="0" onchange="calculateTotal()"></td><td id="total41">0</td></tr>
+                            <tr><td>42</td><td>สมุดวาดเขียน เล็ก</td><td>6</td><td>เล่ม</td><td><input type="number" id="item42" min="0" onchange="calculateTotal()"></td><td id="total42">0</td></tr>
+                            <tr><td>43</td><td>สมุดวาดเขียน ใหญ่</td><td>12</td><td>เล่ม</td><td><input type="number" id="item43" min="0" onchange="calculateTotal()"></td><td id="total43">0</td></tr>
+                            <tr><td>44</td><td>กรรไกร 4.5 นิ้ว (สำหรับเด็ก)</td><td>30</td><td>อัน</td><td><input type="number" id="item44" min="0" onchange="calculateTotal()"></td><td id="total44">0</td></tr>
+                            <tr><td>45</td><td>กรรไกร 5 นิ้ว (สำหรับเด็ก)</td><td>35</td><td>อัน</td><td><input type="number" id="item45" min="0" onchange="calculateTotal()"></td><td id="total45">0</td></tr>
+                            <tr><td>46</td><td>กระดาษรายงาน A4/20 แผ่น</td><td>20</td><td>ห่อ</td><td><input type="number" id="item46" min="0" onchange="calculateTotal()"></td><td id="total46">0</td></tr>
+                            <tr><td>47</td><td>กระดาษรายงาน A4/40 แผ่น</td><td>30</td><td>ห่อ</td><td><input type="number" id="item47" min="0" onchange="calculateTotal()"></td><td id="total47">0</td></tr>
+                            <tr><td>48</td><td>กระดาษรายงาน A4/200 แผ่น</td><td>95</td><td>ห่อ</td><td><input type="number" id="item48" min="0" onchange="calculateTotal()"></td><td id="total48">0</td></tr>
+                            <tr><td>49</td><td>สมุดรายงาน A4/50 czjo</td><td>50</td><td>เล่ม</td><td><input type="number" id="item49" min="0" onchange="calculateTotal()"></td><td id="total49">0</td></tr>
+                            <tr><td>50</td><td>กระดาษ A4</td><td>20</td><td>ห่อ</td><td><input type="number" id="item50" min="0" onchange="calculateTotal()"></td><td id="total50">0</td></tr>
+                            <tr><td>51</td><td>กระดาษ Q A4/70gm/500sh</td><td>145</td><td>รีม</td><td><input type="number" id="item51" min="0" onchange="calculateTotal()"></td><td id="total51">0</td></tr>
+                            <tr><td>52</td><td>กระดาษ AA A4/80gm/500sh</td><td>165</td><td>รีม</td><td><input type="number" id="item52" min="0" onchange="calculateTotal()"></td><td id="total52">0</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div style="margin-top: 10px;">
+                <strong>ยอดรวมทั้งหมด: </strong><span id="grandTotal">0</span> บาท
+            </div>
+            <button class="add-btn" onclick="addRecord()">บันทึก</button>
+        </div>
+
+        <div class="result-section">
+            <h2>รายการที่บันทึก</h2>
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onclick="toggleSelectAll()"></th>
+                        <th>ภาคเรียน</th>
+                        <th>ปีการศึกษา</th>
+                        <th>ชั้นเรียน</th>
+                        <th>ห้อง</th>
+                        <th>นักเรียน</th>
+                        <th>ยอดรวม (บาท)</th>
+                        <th>การจัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsBody"></tbody>
+            </table>
+            <button class="delete-btn" onclick="promptPassword('deleteSelected')">ลบรายการที่เลือก</button>
+
+            <h2>สรุปผล</h2>
+            <div class="filter-section">
+                <label>กรองผลสรุป: </label>
+                <select id="summaryFilter" onchange="updateSummary()">
+                    <option value="all">ทั้งหมด</option>
+                    <option value="beforePrimary">ก่อนประถมศึกษา</option>
+                    <option value="primary">ประถมศึกษา</option>
+                    <option value="secondary">มัธยมศึกษา</option>
+                </select>
+            </div>
+            <div id="summary"></div>
+            <button class="add-btn" onclick="exportToExcel()">Export เป็น Excel</button>
+            <label for="importFile" class="import-btn" style="display: inline-block; padding: 8px 15px;">Import ข้อมูล</label>
+            <input type="file" id="importFile" accept=".xlsx" onchange="importFromExcel(event)">
+        </div>
+
+        <div class="developer-info">
+            <p><a onclick="setPasswordPrompt()">พัฒนาระบบโดย</a> นายณัฐรวี วิเศษสมบัติ ตำแหน่ง ครูผู้ช่วย</p>
+            <p>โรงเรียนซับใหญ่วิทยาคม</p>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+    <div id="alertBox" class="alert-box"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        let records = [];
+        let editIndex = -1;
+        let passwordHash = localStorage.getItem('passwordHash') || null;
+
+        const items = [
+            { name: "สมุด 40 แผ่น ธรรมดา", price: 12, unit: "เล่ม" },
+            { name: "สมุด 40 กราฟ", price: 12, unit: "เล่ม" },
+            { name: "สมุด 40 แผ่น 5 เส้น", price: 12, unit: "เล่ม" },
+            { name: "สมุด 40 แผ่น ครึ่งบรรทัด", price: 12, unit: "เล่ม" },
+            { name: "สมุด 80 แผ่น ธรรมดา", price: 24, unit: "เล่ม" },
+            { name: "สมุด 80 กราฟ", price: 24, unit: "เล่ม" },
+            { name: "สมุด 80 แผ่น 5 เส้น", price: 24, unit: "เล่ม" },
+            { name: "สมุด 80 แผ่น ครึ่งบรรทัด", price: 24, unit: "เล่ม" },
+            { name: "ดินสอ เอชบี", price: 5, unit: "แท่ง" },
+            { name: "ดินสอ 2 บี", price: 6, unit: "แท่ง" },
+            { name: "ปากกาลูกลื่น สีน้ำเงิน (7 บาท)", price: 7, unit: "ด้าม" },
+            { name: "ปากกาลูกลื่น สีแดง (7 บาท)", price: 7, unit: "ด้าม" },
+            { name: "ปากกาลูกลื่น สีดำ (7 บาท)", price: 7, unit: "ด้าม" },
+            { name: "ปากกาลูกลื่น สีน้ำเงิน (8 บาท)", price: 8, unit: "ด้าม" },
+            { name: "ปากกาลูกลื่น สีแดง (8 บาท)", price: 8, unit: "ด้าม" },
+            { name: "ปากกาลูกลื่น สีดำ (8 บาท)", price: 8, unit: "ด้าม" },
+            { name: "ยางลบ", price: 6, unit: "ก้อน" },
+            { name: "ยางลบ Staedler", price: 8, unit: "ก้อน" },
+            { name: "น้ำยาลบคำผิด", price: 20, unit: "ด้าม" },
+            { name: "ไม้บรรทัด พลาสติก 12 นิ้ว", price: 5, unit: "อัน" },
+            { name: "ไม้บรรทัด อลูมิเนียม 12 นิ้ว", price: 40, unit: "อัน" },
+            { name: "ชุดเรขาคณิต", price: 50, unit: "ชุด" },
+            { name: "ไม้โปรแทรกเตอร์", price: 5, unit: "อัน" },
+            { name: "ดินน้ำมันไร้สารพิษ", price: 40, unit: "แพ็ค" },
+            { name: "ดินน้ำมัน 100 กรัม", price: 8, unit: "ก้อน" },
+            { name: "ดินน้ำมัน 150 กรัม", price: 20, unit: "ก้อน" },
+            { name: "ดินน้ำมัน 500 กรัม", price: 60, unit: "ก้อน" },
+            { name: "สีไม้ ยาว 12 สี MTA", price: 80, unit: "กล่อง" },
+            { name: "สีไม้ ยาว 12 สี (2 หัว) MTA", price: 50, unit: "กล่อง" },
+            { name: "สีไม้ สั้น 12 สี MTA", price: 50, unit: "กล่อง" },
+            { name: "สีเทียน จัมโบ้ 12 สี MTA", price: 40, unit: "กล่อง" },
+            { name: "สีโปสเตอร์ ชุดจิตรกรน้อย MTA", price: 120, unit: "กล่อง" },
+            { name: "สีน้ำ 12 สี MTA", price: 60, unit: "กล่อง" },
+            { name: "สีไม้ คลอลีน 12 สี", price: 90, unit: "กล่อง" },
+            { name: "สีไม้ คลอลีน 24 สี", price: 180, unit: "กล่อง" },
+            { name: "สีไม้ คลอลีน 36 สี", price: 270, unit: "กล่อง" },
+            { name: "สีไม้ คลอลีน 48 สี", price: 360, unit: "กล่อง" },
+            { name: "จานสี กลม", price: 10, unit: "อัน" },
+            { name: "แฟ้มกระดุม A4/F4", price: 20, unit: "แฟ้ม" },
+            { name: "แฟ้มพลาสติก+ไส้แฟ้ม", price: 50, unit: "แฟ้ม" },
+            { name: "แฟ้มซองพลาสติก A4", price: 8, unit: "แฟ้ม" },
+            { name: "สมุดวาดเขียน เล็ก", price: 6, unit: "เล่ม" },
+            { name: "สมุดวาดเขียน ใหญ่", price: 12, unit: "เล่ม" },
+            { name: "กรรไกร 4.5 นิ้ว (สำหรับเด็ก)", price: 30, unit: "อัน" },
+            { name: "กรรไกร 5 นิ้ว (สำหรับเด็ก)", price: 35, unit: "อัน" },
+            { name: "กระดาษรายงาน A4/20 แผ่น", price: 20, unit: "ห่อ" },
+            { name: "กระดาษรายงาน A4/40 แผ่น", price: 30, unit: "ห่อ" },
+            { name: "กระดาษรายงาน A4/200 แผ่น", price: 95, unit: "ห่อ" },
+            { name: "สมุดรายงาน A4/50 czjo", price: 50, unit: "เล่ม" },
+            { name: "กระดาษ A4", price: 20, unit: "ห่อ" },
+            { name: "กระดาษ Q A4/70gm/500sh", price: 145, unit: "รีม" },
+            { name: "กระดาษ AA A4/80gm/500sh", price: 165, unit: "รีม" }
+        ];
+
+        function calculateTotal() {
+            let grandTotal = 0;
+            for (let i = 1; i <= 52; i++) {
+                const qty = parseInt(document.getElementById(`item${i}`).value) || 0;
+                const price = (i === 38) ? parseInt(document.getElementById('price38').value) : items[i-1].price;
+                const total = qty * price;
+                document.getElementById(`total${i}`).textContent = total;
+                grandTotal += total;
+            }
+            document.getElementById('grandTotal').textContent = grandTotal;
+            return grandTotal;
+        }
+
+        function hashPassword(password) {
+            // ใช้การเข้ารหัสแบบง่ายเพื่อทดสอบ
+            return btoa(password); // เข้ารหัส Base64
+        }
+
+        function verifyPassword(password, hash) {
+            // ตรวจสอบรหัสผ่านด้วย Base64
+            return hash === btoa(password);
+        }
+
+        function showAlert(message, type, callback) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.textContent = message;
+            alertBox.className = `alert-box ${type}`;
+            if (type === 'warning') {
+                alertBox.innerHTML += `<br><button onclick="confirmSave(true)">บันทึก</button><button onclick="confirmSave(false)">ยกเลิก</button>`;
+                window.confirmSave = (save) => {
+                    alertBox.classList.remove('show');
+                    if (save) callback();
+                };
+            } else if (type === 'password') {
+                alertBox.innerHTML = message;
+            }
+            alertBox.classList.add('show');
+            if (type === 'error') {
+                setTimeout(() => alertBox.classList.remove('show'), 3000);
+            }
+        }
+
+        function promptPassword(action, index = null) {
+            if (!passwordHash) {
+                showAlert('กรุณาตั้งรหัสผ่านก่อนใช้งานฟังก์ชันนี้', 'error');
+                return;
+            }
+            showAlert(`<label>กรุณากรอกรหัสผ่าน:</label><input type="password" id="passwordInput"><br><button onclick="checkPassword('${action}', ${index})">ยืนยัน</button><button onclick="document.getElementById('alertBox').classList.remove('show')">ยกเลิก</button>`, 'password');
+        }
+
+        function checkPassword(action, index) {
+            const password = document.getElementById('passwordInput').value;
+            const alertBox = document.getElementById('alertBox');
+            if (verifyPassword(password, passwordHash)) {
+                alertBox.classList.remove('show');
+                if (action === 'edit') editRecord(index);
+                else if (action === 'delete') deleteRecord(index);
+                else if (action === 'deleteSelected') deleteSelected();
+            } else {
+                alertBox.textContent = 'รหัสผ่านไม่ถูกต้อง';
+                alertBox.classList.add('error');
+                setTimeout(() => alertBox.classList.remove('show'), 2000);
+            }
+        }
+
+        function setPasswordPrompt() {
+            if (!passwordHash) {
+                showAlert(`<label>ตั้งรหัสผ่าน:</label><input type="password" id="newPassword"><br><label>ยืนยันรหัสผ่าน:</label><input type="password" id="confirmPassword"><br><button class="show-password" onclick="togglePasswordVisibility()">ดูรหัส</button><button onclick="setPassword()">ตั้งรหัส</button><button onclick="document.getElementById('alertBox').classList.remove('show')">ยกเลิก</button>`, 'password');
+            } else {
+                showAlert(`<label>รหัสผ่านเก่า:</label><input type="password" id="oldPassword"><br><label>รหัสผ่านใหม่:</label><input type="password" id="newPassword"><br><label>ยืนยันรหัสผ่านใหม่:</label><input type="password" id="confirmPassword"><br><button class="show-password" onclick="togglePasswordVisibility()">ดูรหัส</button><button onclick="changePassword()">เปลี่ยนรหัส</button><button onclick="document.getElementById('alertBox').classList.remove('show')">ยกเลิก</button>`, 'password');
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const newPassword = document.getElementById('newPassword');
+            const confirmPassword = document.getElementById('confirmPassword');
+            const oldPassword = document.getElementById('oldPassword');
+            const type = newPassword.type === 'password' ? 'text' : 'password';
+            newPassword.type = type;
+            confirmPassword.type = type;
+            if (oldPassword) oldPassword.type = type;
+        }
+
+        function setPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const alertBox = document.getElementById('alertBox');
+            if (newPassword === confirmPassword && newPassword.length > 0) {
+                passwordHash = hashPassword(newPassword);
+                localStorage.setItem('passwordHash', passwordHash);
+                alertBox.classList.remove('show');
+                showNotification('ตั้งรหัสผ่านสำเร็จ!');
+            } else {
+                alertBox.textContent = 'รหัสผ่านไม่ตรงกันหรือว่างเปล่า';
+                alertBox.classList.add('error');
+                setTimeout(() => alertBox.classList.remove('show'), 2000);
+            }
+        }
+
+        function changePassword() {
+            const oldPassword = document.getElementById('oldPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const alertBox = document.getElementById('alertBox');
+
+            if (verifyPassword(oldPassword, passwordHash)) {
+                if (newPassword === confirmPassword && newPassword.length > 0) {
+                    passwordHash = hashPassword(newPassword);
+                    localStorage.setItem('passwordHash', passwordHash);
+                    alertBox.classList.remove('show');
+                    showNotification('เปลี่ยนรหัสผ่านสำเร็จ!');
+                } else {
+                    alertBox.textContent = 'รหัสผ่านใหม่ไม่ตรงกันหรือว่างเปล่า';
+                    alertBox.classList.add('error');
+                    setTimeout(() => alertBox.classList.remove('show'), 2000);
+                }
+            } else {
+                alertBox.textContent = 'รหัสผ่านเก่าไม่ถูกต้อง';
+                alertBox.classList.add('error');
+                setTimeout(() => alertBox.classList.remove('show'), 2000);
+            }
+        }
+
+        function addRecord() {
+            const students = parseInt(document.getElementById('students').value) || 0;
+            const grade = document.getElementById('grade').value;
+            const totalPerStudent = calculateTotal();
+            const grandTotal = totalPerStudent * students;
+
+            const budgetLimits = {
+                'beforePrimary': 145,
+                'primary': 220,
+                'secondary': 260
+            };
+
+            let maxBudget;
+            if (['อ.2', 'อ.3'].includes(grade)) {
+                maxBudget = budgetLimits.beforePrimary;
+            } else if (['ป.1', 'ป.2', 'ป.3', 'ป.4', 'ป.5', 'ป.6'].includes(grade)) {
+                maxBudget = budgetLimits.primary;
+            } else {
+                maxBudget = budgetLimits.secondary;
+            }
+
+            if (!document.getElementById('year').value || students === 0) {
+                showAlert('กรุณากรอกข้อมูลให้ครบถ้วน', 'error');
+                return;
+            }
+
+            const record = {
+                term: document.getElementById('term').value,
+                year: document.getElementById('year').value,
+                grade: grade,
+                room: document.getElementById('room').value,
+                students: students,
+                total: grandTotal,
+                items: Array.from({ length: 52 }, (_, i) => parseInt(document.getElementById(`item${i+1}`).value) || 0),
+                price38: parseInt(document.getElementById('price38').value)
+            };
+
+            if (totalPerStudent > maxBudget) {
+                showAlert(`ยอดรวมต่อคน (${totalPerStudent} บาท) เกินงบประมาณสำหรับ ${grade} (${maxBudget} บาท/คน)`, 'error');
+                return;
+            } else if (totalPerStudent < maxBudget) {
+                showAlert(`ยอดรวมต่อคน (${totalPerStudent} บาท) ยังไม่ถึงงบประมาณสำหรับ ${grade} (${maxBudget} บาท/คน) ต้องการบันทึกหรือไม่?`, 'warning', () => {
+                    if (editIndex === -1) {
+                        records.push(record);
+                        showNotification('บันทึกข้อมูลสำเร็จ!');
+                    } else {
+                        records[editIndex] = record;
+                        editIndex = -1;
+                        document.querySelector('.add-btn').textContent = 'บันทึก';
+                        showNotification('อัพเดตข้อมูลสำเร็จ!');
+                    }
+                    updateTable();
+                    updateSummary();
+                    clearForm();
+                });
+                return;
+            }
+
+            if (editIndex === -1) {
+                records.push(record);
+                showNotification('บันทึกข้อมูลสำเร็จ!');
+            } else {
+                records[editIndex] = record;
+                editIndex = -1;
+                document.querySelector('.add-btn').textContent = 'บันทึก';
+                showNotification('อัพเดตข้อมูลสำเร็จ!');
+            }
+            updateTable();
+            updateSummary();
+            clearForm();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('recordsBody');
+            tbody.innerHTML = '';
+            records.forEach((record, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="checkbox" class="selectRow" data-index="${index}"></td>
+                    <td>${record.term}</td>
+                    <td>${record.year}</td>
+                    <td>${record.grade}</td>
+                    <td>${record.room}</td>
+                    <td>${record.students}</td>
+                    <td>${record.total}</td>
+                    <td>
+                        <button class="edit-btn" onclick="promptPassword('edit', ${index})">แก้ไข</button>
+                        <button class="delete-btn" onclick="promptPassword('delete', ${index})">ลบ</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.selectRow');
+            checkboxes.forEach(checkbox => checkbox.checked = selectAll.checked);
+        }
+
+        function deleteSelected() {
+            const selected = Array.from(document.querySelectorAll('.selectRow:checked'))
+                .map(checkbox => parseInt(checkbox.dataset.index))
+                .sort((a, b) => b - a);
+
+            if (selected.length === 0) {
+                showAlert('กรุณาเลือกรายการที่ต้องการลบ', 'error');
+                return;
+            }
+
+            if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ ${selected.length} รายการที่เลือก?`)) {
+                selected.forEach(index => records.splice(index, 1));
+                updateTable();
+                updateSummary();
+                document.getElementById('selectAll').checked = false;
+            }
+        }
+
+        function editRecord(index) {
+            const record = records[index];
+            document.getElementById('term').value = record.term;
+            document.getElementById('year').value = record.year;
+            document.getElementById('grade').value = record.grade;
+            document.getElementById('room').value = record.room;
+            document.getElementById('students').value = record.students;
+            for (let i = 1; i <= 52; i++) {
+                document.getElementById(`item${i}`).value = record.items[i-1];
+            }
+            document.getElementById('price38').value = record.price38 || 10;
+            calculateTotal();
+
+            editIndex = index;
+            document.querySelector('.add-btn').textContent = 'อัพเดต';
+        }
+
+        function deleteRecord(index) {
+            if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
+                records.splice(index, 1);
+                updateTable();
+                updateSummary();
+            }
+        }
+
+        function updateSummary() {
+            const filter = document.getElementById('summaryFilter').value;
+            let summaryHTML = '';
+            let filteredRecords = [];
+
+            if (filter === 'all') {
+                filteredRecords = records;
+                const total = filteredRecords.reduce((sum, r) => sum + r.total, 0);
+                summaryHTML += `<strong>รวมทั้งหมด</strong><br>ยอดรวม: ${total} บาท<br>`;
+            } else if (filter === 'beforePrimary') {
+                filteredRecords = records.filter(r => ['อ.2', 'อ.3'].includes(r.grade));
+                const total = filteredRecords.reduce((sum, r) => sum + r.total, 0);
+                summaryHTML += `<strong>ก่อนประถมศึกษา</strong><br>ยอดรวม: ${total} บาท<br>`;
+            } else if (filter === 'primary') {
+                filteredRecords = records.filter(r => ['ป.1', 'ป.2', 'ป.3', 'ป.4', 'ป.5', 'ป.6'].includes(r.grade));
+                const total = filteredRecords.reduce((sum, r) => sum + r.total, 0);
+                summaryHTML += `<strong>ประถมศึกษา</strong><br>ยอดรวม: ${total} บาท<br>`;
+            } else if (filter === 'secondary') {
+                filteredRecords = records.filter(r => ['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6'].includes(r.grade));
+                const total = filteredRecords.reduce((sum, r) => sum + r.total, 0);
+                summaryHTML += `<strong>มัธยมศึกษา</strong><br>ยอดรวม: ${total} บาท<br>`;
+            }
+
+            summaryHTML += generateItemsTable(filteredRecords);
+            document.getElementById('summary').innerHTML = summaryHTML || 'ไม่มีข้อมูล';
+        }
+
+        function generateItemsTable(filteredRecords) {
+            let itemsHTML = '<table id="summary-table">';
+            itemsHTML += '<thead><tr><th>ลำดับ</th><th>รายการ</th><th>จำนวน</th></tr></thead><tbody>';
+            const totals = Array(52).fill(0);
+            filteredRecords.forEach(record => {
+                record.items.forEach((qty, i) => {
+                    totals[i] += qty * record.students;
+                });
+            });
+
+            for (let i = 0; i < 52; i++) {
+                if (totals[i] > 0) {
+                    const name = (i === 37 && filteredRecords.some(r => r.price38 === 20)) ? "จานสี กลม (ใหญ่ 20)" : items[i].name;
+                    itemsHTML += `<tr><td>${i+1}</td><td>${name}</td><td>${totals[i]} ${items[i].unit}</td></tr>`;
+                }
+            }
+            itemsHTML += '</tbody></table>';
+            return itemsHTML;
+        }
+
+        function clearForm() {
+            document.getElementById('term').selectedIndex = 0;
+            document.getElementById('year').value = '2567';
+            document.getElementById('grade').selectedIndex = 0;
+            document.getElementById('room').selectedIndex = 0;
+            document.getElementById('students').value = '';
+            for (let i = 1; i <= 52; i++) {
+                document.getElementById(`item${i}`).value = '';
+                document.getElementById(`total${i}`).textContent = '0';
+            }
+            document.getElementById('price38').value = '10';
+            document.getElementById('grandTotal').textContent = '0';
+        }
+
+        function exportToExcel() {
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.json_to_sheet(records.map(r => ({
+                ภาคเรียน: r.term,
+                ปีการศึกษา: r.year,
+                ชั้นเรียน: r.grade,
+                ห้อง: r.room,
+                นักเรียน: r.students,
+                ยอดรวม: r.total,
+                ...r.items.reduce((acc, qty, idx) => {
+                    const itemName = (idx === 37) ? `จานสี กลม (${r.price38} บาท)` : items[idx].name;
+                    return { ...acc, [itemName]: qty };
+                }, {})
+            })));
+            XLSX.utils.book_append_sheet(wb, ws, "Records");
+            XLSX.writeFile(wb, "stationery_orders.xlsx");
+        }
+
+        function importFromExcel(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const firstSheet = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheet];
+                const importedData = XLSX.utils.sheet_to_json(worksheet);
+
+                records = importedData.map(row => {
+                    const itemsQty = items.map((item, idx) => {
+                        const key = (idx === 37) ? Object.keys(row).find(k => k.startsWith("จานสี กลม")) || item.name : item.name;
+                        return row[key] || 0;
+                    });
+                    const price38 = row['จานสี กลม (20 บาท)'] ? 20 : 10;
+                    return {
+                        term: row['ภาคเรียน'] || row['term'],
+                        year: row['ปีการศึกษา'] || row['year'],
+                        grade: row['ชั้นเรียน'] || row['grade'],
+                        room: row['ห้อง'] || row['room'],
+                        students: row['นักเรียน'] || row['students'],
+                        total: row['ยอดรวม'] || row['total'],
+                        items: itemsQty,
+                        price38: price38
+                    };
+                });
+
+                updateTable();
+                updateSummary();
+                showNotification('นำเข้าข้อมูลสำเร็จ!');
+                document.getElementById('importFile').value = '';
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            setTimeout(() => notification.classList.remove('show'), 3000);
+        }
+
+        // อัพเดตสรุปผลเริ่มต้น
+        updateSummary();
+    </script>
+</body>
+</html>
