@@ -501,7 +501,8 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
-        let records = [];
+        // โหลดข้อมูลจาก localStorage เมื่อเริ่มต้น
+        let records = JSON.parse(localStorage.getItem('records')) || [];
         let editIndex = -1;
         let passwordHash = localStorage.getItem('passwordHash') || null;
 
@@ -574,12 +575,10 @@
         }
 
         function hashPassword(password) {
-            // ใช้การเข้ารหัสแบบง่ายเพื่อทดสอบ
             return btoa(password); // เข้ารหัส Base64
         }
 
         function verifyPassword(password, hash) {
-            // ตรวจสอบรหัสผ่านด้วย Base64
             return hash === btoa(password);
         }
 
@@ -734,6 +733,7 @@
                         document.querySelector('.add-btn').textContent = 'บันทึก';
                         showNotification('อัพเดตข้อมูลสำเร็จ!');
                     }
+                    localStorage.setItem('records', JSON.stringify(records)); // บันทึกข้อมูลลง localStorage
                     updateTable();
                     updateSummary();
                     clearForm();
@@ -750,6 +750,7 @@
                 document.querySelector('.add-btn').textContent = 'บันทึก';
                 showNotification('อัพเดตข้อมูลสำเร็จ!');
             }
+            localStorage.setItem('records', JSON.stringify(records)); // บันทึกข้อมูลลง localStorage
             updateTable();
             updateSummary();
             clearForm();
@@ -795,6 +796,7 @@
 
             if (confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบ ${selected.length} รายการที่เลือก?`)) {
                 selected.forEach(index => records.splice(index, 1));
+                localStorage.setItem('records', JSON.stringify(records)); // อัพเดต localStorage หลังลบ
                 updateTable();
                 updateSummary();
                 document.getElementById('selectAll').checked = false;
@@ -821,6 +823,7 @@
         function deleteRecord(index) {
             if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) {
                 records.splice(index, 1);
+                localStorage.setItem('records', JSON.stringify(records)); // อัพเดต localStorage หลังลบ
                 updateTable();
                 updateSummary();
             }
@@ -935,6 +938,7 @@
                     };
                 });
 
+                localStorage.setItem('records', JSON.stringify(records)); // บันทึกข้อมูลนำเข้าลง localStorage
                 updateTable();
                 updateSummary();
                 showNotification('นำเข้าข้อมูลสำเร็จ!');
@@ -950,7 +954,8 @@
             setTimeout(() => notification.classList.remove('show'), 3000);
         }
 
-        // อัพเดตสรุปผลเริ่มต้น
+        // อัพเดตตารางและสรุปผลเมื่อเริ่มต้น
+        updateTable();
         updateSummary();
     </script>
 </body>
